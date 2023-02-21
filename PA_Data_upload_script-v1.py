@@ -28,10 +28,7 @@ cursor = conn.cursor()
 
 userid = input("Enter your login (name.surname) : ")
 login = userid + '@metamaterial.com'
-'''
-login = "lokeshwar.bandhu@metamaterial.com"
-path = "C:\\Users\\Meta Materials\\Downloads\\VCD logs\\Samples"
-'''
+
 # Function to check whether Project exists or not. Input argument is project_id (varchar), ex. PAT999
 def check_Project(project_id):
     # check whether Project ID already exists
@@ -47,7 +44,7 @@ def check_Project(project_id):
             print("Error in checking Project")
             raise
 
-# Function to check whether sample exists. Input argument is sammple_id (int), ex. 123
+# Function to check whether sample exists. Input argument is sammple_name (varchar), ex. PET010
 def check_Sample(sample_name):
     # check whether Project ID already exists
     sql = "SELECT id,Name from Samples WHERE Name = \'" + sample_name + "\'"
@@ -78,9 +75,7 @@ def check_Process(sample_name,process_name):
         else :
                 print("Error in checking Process")
                 raise
-                
-
-
+               
 # Function to check whether Subprocess exists or not. Input arguments are process_id (int), ex. 1052, and subprocess_id (varchar), ex. 'VCD1'
 def check_SubProcess(process_id,subprocess_name):
     # check whether Project ID already exists
@@ -99,7 +94,7 @@ def check_SubProcess(process_id,subprocess_name):
         else :
             print("Error in checking SbProcess")
 
-# Fiunction to add Project.Input argument is saaple_id (varchar)
+# Fiunction to add Project. No Input arguments
 def add_Project():
     # Enter new project details
     project_id = input("Enter Project ID : ")
@@ -135,7 +130,7 @@ def add_Project():
             print("Error in adding project" + project_id)
             raise
 
-# Function to add sample. Input arguments are Project_id, ex. PAT999, and sample_name, ex. "PE0101"
+# Function to add sample. Input arguments are Project_id, ex. PAT999, and sample_name, ex. "PET101"
 def add_Sample(project_id = "", sample_name = ""):
     # Assign project id
     sql = "SELECT ID FROM Projects WHERE Project_id = \'" +project_id+"\'"
@@ -240,6 +235,8 @@ def add_Process(sample_name):
         print("Error in adding Process" + process_name)
         raise
 
+        
+# Function to add SubProcess. Input argument is process id (int), ex. 1029, and subprocess_id (varchar), ex. 'VCD1'
 def add_SubProcess(process_id, subprocess_name):
     # Enter new subprocess details
     sql = "SELECT Id, Name, Code from SubProcessTypes"
@@ -316,6 +313,7 @@ def upload_file(path,file):
     print(response.text)
     print("File uploaded for "+sample_id+ " in Subprocess : "+subprocess_id)
 
+# Function to check the directory and files to upload
 def check_file():
     path = input("Enter file location : ")
     # Change the directory
@@ -382,12 +380,3 @@ def check_file():
 
 check_file()
 conn.close()
-
-'''
-# to extract all column names from a table
-sql = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'SubProcesses'"
-cursor.execute(sql)
-x = cursor.fetchall()
-for row in x:
-    print(row)
-'''
