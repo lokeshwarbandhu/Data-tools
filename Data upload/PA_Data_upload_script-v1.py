@@ -4,8 +4,8 @@ import pandas as pd
 import requests
 from datetime import datetime
 import re
-#import sqlite3
 
+# Contact admin for UID and PWD
 UID = input("Enter your user id : ")
 PWD = input("Enter password : ")
 #######Connection will be done using this conection string#######
@@ -24,7 +24,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
 cursor = conn.cursor()
 print("Connected to the server \n")
 
-
+# Login Id used for data logging
 userid = input("Enter your login (name.surname) : ")
 login = userid + '@metamaterial.com'
 
@@ -242,14 +242,16 @@ def add_SubProcess(process_id, subprocess_name):
     sql = "SELECT Id, Name, Code from SubProcessTypes"
     cursor.execute(sql)
     x = cursor.fetchall()
+    choice_list = []
     for idx, row in enumerate(x) : 
         print(row[0], '. ',row[1])
+        choice_list.append(row[0])
     # Print option for new process
     print(str(row[0]+1) + '. New subProcess')
     # Choose from the list of Sub processes
     choice = int(input("Enter the subProcess index from list above: "))
     # Assign subProcess details for the selected option
-    if choice in range(1,row[0]+1):
+    if choice in choice_list:
         subprocess_name = subprocess_name
         subprocessTypeId = x[choice-1][0]
         subprocess_desc = x[choice-1][1]
@@ -285,8 +287,8 @@ def add_SubProcess(process_id, subprocess_name):
 
 # Function to upload file using Web API
 def upload_file(path,file):
-    sample_id = file.split('_')[0]
-    subprocess_id = file.split('_')[-1].split('.')[0]
+    sample_name = re.split('_|-', file)[0]
+    subprocess_name = re.split('_|-', file)[-1].split('.')[0]
     filename = file.split('.')[0]
     filetype = file.split('.')[-1]
     filepath = path + "\\" + file
@@ -296,7 +298,7 @@ def upload_file(path,file):
     sql = "SELECT Subprocesses.Id FROM Subprocesses \
         INNER JOIN Processes ON Subprocesses.ProcessId = Processes.Id \
         INNER JOIN Samples ON Samples.Id = Processes.SampleId \
-        WHERE Subprocesses.name = \'" +subprocess_id+ "\' AND Samples.Name = \'" +sample_id+ "\'"
+        WHERE Subprocesses.name = \'" +subprocess_name+ "\' AND Samples.Name = \'" +sample_name+ "\'"
     cursor.execute(sql)
     x = cursor.fetchall()
     for row in x: 
@@ -311,7 +313,7 @@ def upload_file(path,file):
     headers = {'Authorization': 'Basic bWV0YW1hdGVyaWFsOnd4Ukt3eVpMWTBVa1ZBRWI='}
     response = requests.request("POST", url, headers=headers, data=payload, files=files)
     print(response.text)
-    print("File uploaded for "+sample_id+ " in Subprocess : "+subprocess_id)
+    print("File uploaded for "+sample_name+ " in Subprocess : "+subprocess_name)
 
 # Function to check the directory and files to upload
 def check_file():
