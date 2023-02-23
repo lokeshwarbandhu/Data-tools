@@ -5,7 +5,7 @@ This python script is designed to add Projects, Samples, Processes, Subprocesses
 ### Installation
 Python version 3.10.6 or above
 ### User privilege
-Metamaterial user credentials \n
-Database userid and password \n
-Editing rights from admin \n
-Admin contact - lokeshwar.bandhu@metamaterial.com \n
+Metamaterial user credentials \
+Database userid and password \
+Editing rights from admin \
+Admin contact - lokeshwar.bandhu@metamaterial.com \
