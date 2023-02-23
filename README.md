@@ -8,4 +8,4 @@ Python version 3.10.6 or above
 Metamaterial user credentials \
 Database userid and password \
 Editing rights from admin \
-Admin contact - lokeshwar.bandhu@metamaterial.com \
+Admin contact - lokeshwar.bandhu@metamaterial.com 
