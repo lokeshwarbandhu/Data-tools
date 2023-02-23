@@ -66,10 +66,13 @@ def save_data(t,ch1,ch2, filename):
     #close workbook
     workbook.close()
 
-channel = "CH1"
-filename = channel
-(t,ch1) = acquire(channel,"GPIB0::1::INSTR")
 
+sample_name = input("Enter sample name (e.g. PET010): ")
+subprocess_name = input("Enter subprocess name (e.g. OSC1): ")
+filename = sample_name + '-' + subprocess_name
+
+channel = "CH1"
+(t,ch1) = acquire(channel,"GPIB0::1::INSTR")
 channel = "CH2"
 (t,ch2) = acquire(channel,"GPIB0::1::INSTR")
 save_data(t,ch1,ch2, filename)
