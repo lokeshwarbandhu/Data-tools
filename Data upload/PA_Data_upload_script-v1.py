@@ -1,11 +1,9 @@
 import pyodbc
-import sys
 import os
 import pandas as pd
 import requests
-import json
-import requests
 from datetime import datetime
+import re
 #import sqlite3
 
 UID = input("Enter your user id : ")
@@ -24,6 +22,7 @@ conn = pyodbc.connect('Driver={SQL Server};'
                        'Encrypt=yes;')
 
 cursor = conn.cursor()
+print("Connected to the server \n")
 
 
 userid = input("Enter your login (name.surname) : ")
@@ -104,6 +103,7 @@ def add_Project():
         return project_id
             
     else :   
+        print(project_id + " already exists ")
         project_id = input("Enter new Project ID : ")
         project_name = input("Enter Project name : ")
         project_desc = input("Enter Project description : ")
@@ -245,11 +245,11 @@ def add_SubProcess(process_id, subprocess_name):
     for idx, row in enumerate(x) : 
         print(row[0], '. ',row[1])
     # Print option for new process
-    print(str(idx+1) + '. New subProcess')
+    print(str(row[0]+1) + '. New subProcess')
     # Choose from the list of Sub processes
     choice = int(input("Enter the subProcess index from list above: "))
     # Assign subProcess details for the selected option
-    if choice in range(1,idx):
+    if choice in range(1,row[0]+1):
         subprocess_name = subprocess_name
         subprocessTypeId = x[choice-1][0]
         subprocess_desc = x[choice-1][1]
@@ -330,8 +330,8 @@ def check_file():
     # iterate through all file
     for file in os.listdir():
         # Extract sample ID from filename
-        sample_name = file.split('_')[0]
-        subprocess_name = file.split('_')[-1].split('.')[0]
+        sample_name = re.split('_|-', file)[0]
+        subprocess_name = re.split('_|-', file)[-1].split('.')[0]
         print(sample_name,subprocess_name)
 
         # Check whether sample exists in the database
