@@ -6,9 +6,11 @@ from datetime import datetime
 import re
 
 # Contact admin for UID and PWD
-UID = input("Enter your user id : ")
-PWD = input("Enter password : ")
+#UID = input("Enter your user id : ")
+#PWD = input("Enter password : ")
 
+UID = "lokeshwarbandhu"
+PWD = "eTk7Q%oqzT[o\AS"
 #######Connection will be done using this conection string#######
 connection_string = "DefaultEndpointsProtocol=https;AccountName=metasqlstorage;AccountKey=VoSW7No7d0pMH29Cp2cbQrV4J4AoaZyMPCG5Ml\
 zmF+c0e6SvGlkvrbvdbuFe02Ee4OHedcoau4KD+AStDgvEIA==;EndpointSuffix=core.windows.net"
@@ -26,7 +28,8 @@ cursor = conn.cursor()
 print("Connected to the server \n")
 
 # Login Id used for data logging
-userid = input("Enter your login (name.surname) : ")
+#userid = input("Enter your login (name.surname) : ")
+userid = "lokeshwar.bandhu"
 login = userid + '@metamaterial.com'
 
 # Function to check whether Project exists or not. Input argument is project_id (varchar), ex. PAT999
@@ -139,8 +142,32 @@ def add_Sample(project_id = "", sample_name = ""):
     project_id = x[0]
     # Assign sample id
     if len(sample_name) == 0 :
+        # Choose substrate
+        sql = "SELECT DISTINCT Substrate from Samples"
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        choice_list =[]
+        for idx, row in enumerate(data):
+            print(idx, '. ', row[0])
+            choice_list.append(idx)
+        # Print option for new process
+        print(str(idx+1) + ' . New substrate')
+        # input choice
+        choice = int(input("Choose substrate index from the list above : "))
+        if choice in choice_list:
+            sample_substrate = data[choice][0]
+        else :
+            sample_substrate = input("Enter new substrate")
+
+        # Assign sample name based on substrate
+        sql = "SELECT MAX(Name) from Samples WHERE Substrate LIKE \'%" +sample_substrate+"%\'"
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        for row in data:
+            sample_name = row[0][:3]+str(int(row[0][-3:])+1).zfill(3)
+            print("Available sample name : "+sample_name)
+        
         # Enter new sample details
-        sample_name = input("Enter Sample Name : ")
         while check_Sample(sample_name):
             choice = input("Do you want to add a process to this sample? \n 1. Yes \n 2. No \n 3. Exit \n")
             match choice:
@@ -149,19 +176,18 @@ def add_Sample(project_id = "", sample_name = ""):
                     return
                 case "2" : sample_name = input("Enter new Sample Name : ")
                 case _ : return
-    else : pass
-    
-    # Assign substrate
-    sample_substrate = ""
-    sql = "SELECT Name, Substrate from Samples WHERE Name LIKE \'" +sample_name[0:3]+"%\'"
-    cursor.execute(sql)
-    x = cursor.fetchall()
-    for row in x:
-        sample_substrate = row[1]
-        break
-    if len(sample_substrate) == 0:
-        sample_substrate = input("Enter new sustrate : ")
-    
+    else :
+        # Assign substrate
+        sample_substrate = ""
+        sql = "SELECT Name, Substrate from Samples WHERE Name LIKE \'" +sample_name[0:3]+"%\'"
+        cursor.execute(sql)
+        x = cursor.fetchall()
+        for row in x:
+            sample_substrate = row[1]
+            break
+        if len(sample_substrate) == 0:
+            sample_substrate = input("Enter new sustrate : ")
+        
     # Assign sample details
     sample_desc = input("Enter Sample description : ")
     sample_com = input("Enter Sample comments : ")
@@ -271,36 +297,69 @@ def add_Process(sample_name):
 def add_SubProcess(process_id, subprocess_name):
     # Assign subprocess name
     if len(subprocess_name) == 0 :
-        # Enter new subprocess_name details
-        subprocess_name = input("Enter SubProcess Name : ")
-        while check_SubProcess(process_id,subprocess_name):
-            subprocess_name = input("Enter new SubProcess Name : ")
-    else : pass
+        # Select from Subprocess list
+        sql = "SELECT Id, Name, Code from SubProcessTypes"
+        cursor.execute(sql)
+        x = cursor.fetchall()
+        choice_list = []
+        for idx,row in enumerate(x) : 
+            print(idx,' .',row[1], ' - ', row[2])
+            choice_list.append(idx)
+        # Print option for new process
+        print(str(idx+1) + '. New subProcess')
+        # Choose from the list of Sub processes
+        choice = int(input("Enter the subProcess index from list above: "))
+        # Assign subProcess details for the selected option
+        if choice in choice_list:
+            # Assign subprocess name based on choice from the list
+            sql = "SELECT MAX(Name) from Subprocesses WHERE ProcessId = \'" +str(process_id)+ "\'"
+            cursor.execute(sql)
+            data = cursor.fetchall()
+            for row in data:
+                if row[0] == None:
+                    subprocess_name = x[choice][2]+"1"
+                else:
+                    print(row[0])
+                    match = re.match(r"([a-z]+)([0-9]+)", row[0], re.I)
+                    items = match.groups()
+                    subprocess_name = items[0]+str(int(items[1])+1)
+                    print("Available subprocess name " + subprocess_name)
+            # Assign subprocess details
+            subprocessTypeId = x[choice][0]
+            subprocess_desc = x[choice][1]
+            subprocess_com = ""
+        else :
+            subprocess_name = input("Enter SubProcess name : ")
+            subprocessTypeId = input("Enter SubProcess Code : ")
+            subprocess_desc = input("Enter SubProcess description : ")
+            subprocess_com = input("Enter SubProcess comments : ")
+            subprocess_name = input("Enter SubProcess Name : ")
     
-    # Enter new subprocess details
-    sql = "SELECT Id, Name, Code from SubProcessTypes"
-    cursor.execute(sql)
-    x = cursor.fetchall()
-    choice_list = []
-    for idx,row in enumerate(x) : 
-        print(idx, '. ',row[1])
-        choice_list.append(idx)
-    # Print option for new process
-    print(str(idx+1) + '. New subProcess')
-    # Choose from the list of Sub processes
-    choice = int(input("Enter the subProcess index from list above: "))
-    # Assign subProcess details for the selected option
-    if choice in choice_list:
-        subprocess_name = subprocess_name
-        subprocessTypeId = x[choice][0]
-        subprocess_desc = x[choice][1]
-        subprocess_com = ""
-    else :
-        subprocess_name = input("Enter SubProcess name : ")
-        subprocessTypeId = input("Enter SubProcess ID : ")
-        subprocess_desc = input("Enter SubProcess description : ")
-        subprocess_com = input("Enter SubProcess comments : ")
-    
+    else:
+        # Enter new subprocess details
+        sql = "SELECT Id, Name, Code from SubProcessTypes"
+        cursor.execute(sql)
+        x = cursor.fetchall()
+        choice_list = []
+        for idx,row in enumerate(x) : 
+            print(idx, '. ',row[1], ' - ', row[2])
+            choice_list.append(idx)
+        # Print option for new process
+        print(str(idx+1) + '. New subProcess')
+        # Choose from the list of Sub processes
+        choice = int(input("Enter the subProcess index from list above: "))
+        # Assign subProcess details for the selected option
+        if choice in choice_list:
+            subprocess_name = subprocess_name
+            subprocessTypeId = x[choice][0]
+            subprocess_desc = x[choice][1]
+            subprocess_com = ""
+        else :
+            subprocess_name = input("Enter SubProcess name : ")
+            subprocessTypeId = input("Enter SubProcess ID : ")
+            subprocess_desc = input("Enter SubProcess description : ")
+            subprocess_com = input("Enter SubProcess comments : ")
+        
     subprocess_date = datetime.now()
     subprocess_par1 = ""
     subprocess_par2 = ""
@@ -336,7 +395,7 @@ def upload_file(path,file):
     #data = pd.read_csv(filepath)
     
     # Find ID of the sub-process to be updated
-    sql = "SELECT Subprocesses.Id FROM Subprocesses \
+    sql = "SELECT Subprocesses.Id, Subprocesses.Attachment FROM Subprocesses \
         INNER JOIN Processes ON Subprocesses.ProcessId = Processes.Id \
         INNER JOIN Samples ON Samples.Id = Processes.SampleId \
         WHERE Subprocesses.name = \'" +subprocess_name+ "\' AND Samples.Name = \'" +sample_name+ "\'"
@@ -344,17 +403,21 @@ def upload_file(path,file):
     x = cursor.fetchall()
     for row in x: 
         id = row[0]
+        attachment = row[1]
         #print(id)
     
-    # upload data using api
-    url = "https://metamaterial.azurewebsites.net/api/Subprocess/Upload/"+str(id)
-    #print(url)
-    payload={}
-    files=[('files',(filename,open(filepath,'rb'),filetype))]
-    headers = {'Authorization': 'Basic bWV0YW1hdGVyaWFsOnd4Ukt3eVpMWTBVa1ZBRWI='}
-    response = requests.request("POST", url, headers=headers, data=payload, files=files)
-    #print(response.text)
-    print("File uploaded for "+sample_name+ " in Subprocess : "+subprocess_name)
+    if attachment == None :
+        # upload data using api
+        url = "https://metamaterial.azurewebsites.net/api/Subprocess/Upload/"+str(id)
+        #print(url)
+        payload={}
+        files=[('files',(filename,open(filepath,'rb'),filetype))]
+        headers = {'Authorization': 'Basic bWV0YW1hdGVyaWFsOnd4Ukt3eVpMWTBVa1ZBRWI='}
+        response = requests.request("POST", url, headers=headers, data=payload, files=files)
+        #print(response.text)
+        print("File uploaded for "+sample_name+ " in Subprocess : "+subprocess_name)
+    else :
+        print("Attachemnt already exists.")
 
 # Function to check the directory and files to upload
 def check_file():
