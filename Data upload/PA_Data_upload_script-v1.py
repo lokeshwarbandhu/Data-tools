@@ -8,6 +8,7 @@ import re
 # Contact admin for UID and PWD
 UID = input("Enter your user id : ")
 PWD = input("Enter password : ")
+
 #######Connection will be done using this conection string#######
 connection_string = "DefaultEndpointsProtocol=https;AccountName=metasqlstorage;AccountKey=VoSW7No7d0pMH29Cp2cbQrV4J4AoaZyMPCG5Ml\
 zmF+c0e6SvGlkvrbvdbuFe02Ee4OHedcoau4KD+AStDgvEIA==;EndpointSuffix=core.windows.net"
@@ -38,14 +39,13 @@ def check_Project(project_id):
         if project_id == id[0] and len(data)==1:
             print("Project " + project_id+ " exists.")
             return True
-            break
         else :
-            print("Error in checking Project")
+            print("Error in Checking Project")
             raise
 
 # Function to check whether sample exists. Input argument is sammple_name (varchar), ex. PET010
 def check_Sample(sample_name):
-    # check whether Project ID already exists
+    # check whether Sample already exists
     sql = "SELECT id,Name from Samples WHERE Name = \'" + sample_name + "\'"
     cursor.execute(sql)
     data = cursor.fetchall()
@@ -53,14 +53,13 @@ def check_Sample(sample_name):
         if sample_name == id[1] and len(data)==1:
             print("Sample " + id[1]+ " exists.")
             return True
-            break
         else :
-            print("Error in checking Sample")
+            print("Error in Checking whether Sample")
             raise
 
 # Function to check whether Process exists or not. Input arguments are sample_name (varchar), ex. PET010, and process_name (varchar), ex. 'Characterisation'
 def check_Process(sample_name,process_name):
-    # check whether Project ID already exists
+    # check whether Process already exists
     sql = "SELECT Processes.SampleId, Processes.Name, Samples.name FROM Processes \
         INNER JOIN Samples ON Processes.SampleId = Samples.Id \
         WHERE Samples.Name = \'" +sample_name+ "\' AND Processes.Name = \'" +process_name+ "\'"
@@ -70,14 +69,13 @@ def check_Process(sample_name,process_name):
         if process_name == id[1] and len(data)==1:
             print("Process " +id[1]+ " exists for " + id[2])
             return True
-            break
         else :
-                print("Error in checking Process")
-                raise
+            print("Error in Checking Process")
+            raise
                
 # Function to check whether Subprocess exists or not. Input arguments are process_id (int), ex. 1052, and subprocess_id (varchar), ex. 'VCD1'
 def check_SubProcess(process_id,subprocess_name):
-    # check whether Project ID already exists
+    # check whether SubProcess already exists
     sql = "SELECT ProcessId, Name FROM Subprocesses WHERE ProcessId = \'" + str(process_id) + "\' AND Name = \'" +subprocess_name+ "\'"
     cursor.execute(sql)
     data = cursor.fetchall()
@@ -89,22 +87,24 @@ def check_SubProcess(process_id,subprocess_name):
             sample_name = sample[0]
             print("SubProcess " +subprocess_name+ " exists for " + sample_name )
             return True
-            break
         else :
-            print("Error in checking SbProcess")
+            print("Error in Checking SubProcess")
 
 # Fiunction to add Project. No Input arguments
 def add_Project():
     # Enter new project details
     project_id = input("Enter Project ID : ")
     # check whether Project ID already exists
-    if check_Project(project_id):
-        choice = input("Do you want to add samples to this project? \n 1. Yes \n 2. No \n")
-        return project_id
+    while check_Project(project_id):
+        choice = input("Do you want to add samples to this project? \n 1. Yes \n 2. No \n 3. Exit \n")
+        match choice:
+            case "1" : 
+                add_Sample(project_id=project_id, sample_name=[])
+                return
+            case "2" : project_id = input("Enter new Project ID : ")
+            case _ : return
             
     else :   
-        print(project_id + " already exists ")
-        project_id = input("Enter new Project ID : ")
         project_name = input("Enter Project name : ")
         project_desc = input("Enter Project description : ")
         project_com = input("Enter Project comments : ")
@@ -120,11 +120,11 @@ def add_Project():
 
         # Fetch the last project uploaded
         try:
-            print("Checking Project in database :")
+            print("Checking whether Project is added to the database now:")
             if check_Project(project_id) :
                 choice = input("Do you want to add samples to this project?  \n 1. Yes \n 2. No \n")
                 match choice:
-                    case "1": return project_id
+                    case "1": add_Sample(project_id=project_id, sample_name=[])
                     case _ : pass
         except:
             print("Error in adding project" + project_id)
@@ -141,8 +141,15 @@ def add_Sample(project_id = "", sample_name = ""):
     if len(sample_name) == 0 :
         # Enter new sample details
         sample_name = input("Enter Sample Name : ")
-    else :
-        sample_name = sample_name
+        while check_Sample(sample_name):
+            choice = input("Do you want to add a process to this sample? \n 1. Yes \n 2. No \n 3. Exit \n")
+            match choice:
+                case "1" : 
+                    add_Process(sample_name)
+                    return
+                case "2" : sample_name = input("Enter new Sample Name : ")
+                case _ : return
+    else : pass
     
     # Assign substrate
     sample_substrate = ""
@@ -174,10 +181,12 @@ def add_Sample(project_id = "", sample_name = ""):
         cursor.execute(sql)
         x = cursor.fetchone()
         sample_id = x[0]  
-        print("Checking Sample in database :")
+        print("Checking whether Sample is added to the database :")
         if check_Sample(sample_name) :
             choice = input("Do you want to add processes to this sample?  \n 1. Yes \n 2. No \n")
-            return choice
+            match choice:
+                case"1": add_Process(sample_name)
+                case _ : pass
     except :
         print("Error in adding sample " + sample_name)
         raise
@@ -193,68 +202,98 @@ def add_Process(sample_name):
     except :
         print("Sample does not exist")
         raise
-        
     
-    # Enter new process details
-    process = input("Enter the type of Process? \n 1. Deposition \n 2. Characterisation \n 3. New Process \n")
-    match process:
-        case "1" : 
-            process_name = "Deposition"
-            process_desc = "Thin film deposition"
-        case "2" : 
-            process_name = "Characterisation"
-            process_desc = "All types of measurements done on the samples"
-        case _ : 
-            process_name = input("Enter New Process name : ")
-            process_desc = input("Enter Process description : ")
-    process_com = ""
-    process_date = datetime.now()
+    # Function to enter new process details
+    def process_details():
+        process = input("Enter the type of Process? \n 1. Deposition \n 2. Characterisation \n 3. New Process \n")
+        match process:
+            case "1" : 
+                process_name = "Deposition"
+                process_desc = "Thin film deposition"
+            case "2" : 
+                process_name = "Characterisation"
+                process_desc = "All types of measurements done on the samples"
+            case "3" : 
+                process_name = input("Enter New Process name : ")
+                process_desc = input("Enter Process description : ")
+            case _ : 
+                print("Entered number is not in the ist. Exiting...")
+                return
+        process_com = ""
+        process_date = datetime.now()
+        pro = [process_name, process_desc, process_com, process_date] # do not chage the order
+        return pro
 
+    # Call process details
+    pro = process_details()
+    # check whether process exists
+    while check_Process(sample_name, pro[0]):
+        choice = input("Do you want to add sub-processes to this Process?  \n 1. Yes \n 2. No \n 3. Exit \n")
+        match choice:
+            case "1" : 
+                cursor.execute("SELECT Processes.id FROM Processes INNER JOIN Samples ON Processes.SampleID = Samples.Id \
+                    WHERE Samples.name = \'" +sample_name+ "\' AND Processes.Name = \'" +pro[0]+ "\'")
+                process_id = cursor.fetchone()[0]
+                add_SubProcess(process_id, subprocess_name=[])
+                return
+            case "2" : 
+                print("Enter new process : \n")
+                pro = process_details()
+                if len(pro) == 0:
+                    return
+            case _ : return
+    
     # Insert process details in database
-    val = (sample_id, process_name, process_desc, process_com, process_date, login)
+    val = (sample_id, pro[0], pro[1], pro[2], pro[3], login)
     sql = "INSERT INTO Processes (sampleId, name, description, comments, createdOn, createdBy) VALUES (?,?,?,?,?,?)"
     cursor.execute(sql,val)
-
-    choice = input("Do you want to add sub-processes to this Process?  \n 1. Yes \n 2. No \n")
-    match choice:
-        case "1" : 
-            cursor.execute("SELECT Processes.id FROM Processes INNER JOIN Samples ON Processes.SampleID = Samples.Id \
-                WHERE Samples.name = \'" +sample_name+ "\' AND Processes.Name = \'" +process_name+ "\'")
-            process_id = cursor.fetchone()[0]
-            return process_id
-        case _ : pass
-    
     # Commit the changes made to the database
     conn.commit()
 
     # Fetch the last process uploaded
     try:
-        print("Checking Processes in database :")
-        if check_Process(sample_id, process_name) : pass
+        print("Checking whether Processes is added to the database now :")
+        if check_Process(sample_name, pro[0]) : 
+            choice = input("Do you want to add subprocesses to this Process?  \n 1. Yes \n 2. No \n")
+            match choice:
+                case"1": 
+                    cursor.execute("SELECT Processes.id FROM Processes INNER JOIN Samples ON Processes.SampleID = Samples.Id \
+                    WHERE Samples.name = \'" +sample_name+ "\' AND Processes.Name = \'" +pro[0]+ "\'")
+                    process_id = cursor.fetchone()[0]
+                    add_SubProcess(process_id, subprocess_name=[])
+                case _ : return
     except :
-        print("Error in adding Process" + process_name)
+        print("Error in adding Process " + pro[0])
         raise
 
         
 # Function to add SubProcess. Input argument is process id (int), ex. 1029, and subprocess_id (varchar), ex. 'VCD1'
 def add_SubProcess(process_id, subprocess_name):
+    # Assign subprocess name
+    if len(subprocess_name) == 0 :
+        # Enter new subprocess_name details
+        subprocess_name = input("Enter SubProcess Name : ")
+        while check_SubProcess(process_id,subprocess_name):
+            subprocess_name = input("Enter new SubProcess Name : ")
+    else : pass
+    
     # Enter new subprocess details
     sql = "SELECT Id, Name, Code from SubProcessTypes"
     cursor.execute(sql)
     x = cursor.fetchall()
     choice_list = []
-    for idx, row in enumerate(x) : 
-        print(row[0], '. ',row[1])
-        choice_list.append(row[0])
+    for idx,row in enumerate(x) : 
+        print(idx, '. ',row[1])
+        choice_list.append(idx)
     # Print option for new process
-    print(str(row[0]+1) + '. New subProcess')
+    print(str(idx+1) + '. New subProcess')
     # Choose from the list of Sub processes
     choice = int(input("Enter the subProcess index from list above: "))
     # Assign subProcess details for the selected option
     if choice in choice_list:
         subprocess_name = subprocess_name
-        subprocessTypeId = x[choice-1][0]
-        subprocess_desc = x[choice-1][1]
+        subprocessTypeId = x[choice][0]
+        subprocess_desc = x[choice][1]
         subprocess_com = ""
     else :
         subprocess_name = input("Enter SubProcess name : ")
@@ -279,8 +318,10 @@ def add_SubProcess(process_id, subprocess_name):
 
     # Fetch the last subprocess uploaded
     try:
-        print("Checking subprocesses in database :")
-        if check_SubProcess(process_id, subprocess_name) : pass
+        print("Checking whether subprocesses is added to the database now:")
+        if check_SubProcess(process_id, subprocess_name) : 
+            print("Subprocess successfully added")
+            return
     except :
         print("Error in adding SubProcess" + subprocess_name)
         raise
@@ -312,7 +353,7 @@ def upload_file(path,file):
     files=[('files',(filename,open(filepath,'rb'),filetype))]
     headers = {'Authorization': 'Basic bWV0YW1hdGVyaWFsOnd4Ukt3eVpMWTBVa1ZBRWI='}
     response = requests.request("POST", url, headers=headers, data=payload, files=files)
-    print(response.text)
+    #print(response.text)
     print("File uploaded for "+sample_name+ " in Subprocess : "+subprocess_name)
 
 # Function to check the directory and files to upload
@@ -324,61 +365,72 @@ def check_file():
     except:
         print("File location is not correct")
         raise
+    
     # Determine the type of deposition to minimise computational time
     process = input("Enter the type of Process? \n 1. Deposition \n 2. Characterisation \n")
     match process:
         case "1" : process_name = "Deposition"
         case "2" : process_name = "Characterisation"
+    
+    # Function to check subprocess and call upload file
+    def call_upload(sample_name, subprocess_name, path, file):
+        # check whether subprocess exists for this sample
+        sql = "SELECT Processes.Id FROM Processes JOIN Samples ON Processes.SampleId = Samples.Id WHERE Samples.Name = \'" + sample_name + "\'"
+        cursor.execute(sql)
+        process_id = cursor.fetchone()[0]
+        if check_SubProcess(process_id, subprocess_name):
+            upload_file(path, file)
+        else:
+            choice = input("SubProcess does not exist for this sample. Do you want to add it ?  \n 1. Yes \n 2. No \n")
+            match choice:
+                case "1":
+                    add_SubProcess(process_id, subprocess_name)
+                    upload_file(path, file)
+                case _: pass
+
     # iterate through all file
     for file in os.listdir():
         # Extract sample ID from filename
         sample_name = re.split('_|-', file)[0]
         subprocess_name = re.split('_|-', file)[-1].split('.')[0]
         print(sample_name,subprocess_name)
-
+        
         # Check whether sample exists in the database
         if check_Sample(sample_name):
             # check whether process exists for this sample
             if check_Process(sample_name=sample_name, process_name=process_name):
-                # check whether subprocess exists for this sample
-                sql = "SELECT Processes.Id FROM Processes JOIN Samples ON Processes.SampleId = Samples.Id WHERE Samples.Name = \'" + sample_name + "\'"
-                cursor.execute(sql)
-                process_id = cursor.fetchone()[0]
-                if check_SubProcess(process_id, subprocess_name):
-                    upload_file(path, file)
-                else:
-                    choice = input("SubProcess does not exist for this sample. Do you want to add it ?  \n 1. Yes \n 2. No \n")
-                    match choice:
-                        case "1":
-                            add_SubProcess(process_id, subprocess_name)
-                            upload_file(path, file)
-                        case _: pass
+                call_upload(sample_name, subprocess_name, path, file)
             else:
                 choice = input("Process does not exist for this sample. Do you want to add it ?  \n 1. Yes \n 2. No \n")
                 match choice:
                     case "1" :
-                        process_id = add_Process(sample_name)
-                        if process_id:
-                            add_SubProcess(process_id, subprocess_name)
-                            upload_file(path, file)
-                        else : print("Error in adding process")
+                        add_Process(sample_name)
+                        call_upload(sample_name, subprocess_name, path, file)
                     case _: pass
         else :
             choice = input("Sample does not exist. Do you want to add it ?  \n 1. Yes \n 2. No \n")
             match choice:
                 case "1": 
-                    project_id = add_Project()
-                    if project_id:
-                        option = add_Sample(project_id=project_id, sample_name=sample_name)
-                        match option:
-                            case "1": 
-                                process_id = add_Process(sample_name)
-                                if process_id:
-                                    add_SubProcess(process_id, subprocess_name)
-                                    upload_file(path, file)
-                            case _: pass
-                    else : pass
-                case _ : pass
+                    project_id = input("Enter Project ID : ")
+                    add_Sample(project_id=project_id, sample_name=sample_name)
+                    call_upload(sample_name, subprocess_name, path, file)
+                case _: pass
 
-check_file()
+choice  = input(" Choose from the list below : \n 1. Add Project \n 2. Add Sample \n 3. Add Process \n 4. Add SubProcess \n 5. Upload files to a SubProcess \n 6. Exit \n")
+match choice:
+    case "1": add_Project() # calls add_project first; add_sample, add_process, add_subprocess are called from there in appropriate order
+    case "2": 
+        # Enter new project details
+        project_id = input("Enter Project ID : ")
+        add_Sample(project_id=project_id,sample_name=[])
+    case "3":
+        project_id = input("Enter Project ID : ")
+        sample_name = input("Enter Sample Name : ")
+        add_Process(sample_name)
+    case "4":
+        project_id = input("Enter Project ID : ")
+        sample_name = input("Enter Sample Name : ")
+        add_Process(sample_name) # add_sub_process is called from add_Process in the correct order
+    case "5" : check_file()
+    case _ : pass
 conn.close()
