@@ -6,11 +6,9 @@ from datetime import datetime
 import re
 
 # Contact admin for UID and PWD
-#UID = input("Enter your user id : ")
-#PWD = input("Enter password : ")
+UID = input("Enter your user id : ")
+PWD = input("Enter password : ")
 
-UID = "lokeshwarbandhu"
-PWD = "eTk7Q%oqzT[o\AS"
 #######Connection will be done using this conection string#######
 connection_string = "DefaultEndpointsProtocol=https;AccountName=metasqlstorage;AccountKey=VoSW7No7d0pMH29Cp2cbQrV4J4AoaZyMPCG5Ml\
 zmF+c0e6SvGlkvrbvdbuFe02Ee4OHedcoau4KD+AStDgvEIA==;EndpointSuffix=core.windows.net"
@@ -28,8 +26,7 @@ cursor = conn.cursor()
 print("Connected to the server \n")
 
 # Login Id used for data logging
-#userid = input("Enter your login (name.surname) : ")
-userid = "lokeshwar.bandhu"
+userid = input("Enter your login (name.surname) : ")
 login = userid + '@metamaterial.com'
 
 # Function to check whether Project exists or not. Input argument is project_id (varchar), ex. PAT999
