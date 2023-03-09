@@ -289,6 +289,27 @@ def add_Process(sample_name):
         print("Error in adding Process " + pro[0])
         raise
 
+def default_values(code):
+    match code:
+        case "SP":
+            subprocess_par1 = "Tencor 7"
+            subprocess_par2 = ""
+            subprocess_par3 = ""
+        case "FPP":
+            subprocess_par1 = "osilla probe station"
+            subprocess_par2 = "1.27"
+            subprocess_par3 = ""
+        case "VCD":
+            subprocess_par1 = "Dep2"
+            subprocess_par2 = "Cu001"
+            subprocess_par3 = "G001"
+        case _ :
+            subprocess_par1 = ""
+            subprocess_par2 = ""
+            subprocess_par3 = ""
+    
+    return (subprocess_par1, subprocess_par2, subprocess_par3)
+
         
 # Function to add SubProcess. Input argument is process id (int), ex. 1029, and subprocess_id (varchar), ex. 'VCD1'
 def add_SubProcess(process_id, subprocess_name):
@@ -351,16 +372,16 @@ def add_SubProcess(process_id, subprocess_name):
             subprocessTypeId = x[choice][0]
             subprocess_desc = x[choice][1]
             subprocess_com = ""
+            (subprocess_par1, subprocess_par2, subprocess_par3) = default_values(x[choice][2])
         else :
             subprocess_name = input("Enter SubProcess name : ")
             subprocessTypeId = input("Enter SubProcess ID : ")
             subprocess_desc = input("Enter SubProcess description : ")
             subprocess_com = input("Enter SubProcess comments : ")
-        
+            subprocess_par1 = input("Enter SubProcess parameter1 (Leave blank if NA) : ")
+            subprocess_par2 = input("Enter SubProcess parameter1 (Leave blank if NA) : ")
+            subprocess_par3 = input("Enter SubProcess parameter1 (Leave blank if NA) : ")
     subprocess_date = datetime.now()
-    subprocess_par1 = ""
-    subprocess_par2 = ""
-    subprocess_par3 = ""
     
     # Insert subprocess details in database
     val = (subprocess_name, subprocessTypeId, subprocess_par1, subprocess_par2, subprocess_par3, subprocess_desc, \
