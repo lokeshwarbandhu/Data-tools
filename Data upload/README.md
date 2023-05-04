@@ -11,6 +11,7 @@ pyodbc : pip install pyodbc \
 pandas : pip install pandas \
 requests :  pip install requests \
 regex : pip install regex 
+csv : pip install python-csv
 
 ### User privilege
 Metamaterial user credentials \
