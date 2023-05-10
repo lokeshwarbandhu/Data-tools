@@ -1,10 +1,32 @@
-import pyodbc
-import os
-import pandas as pd
-import requests
-from datetime import datetime
-import re
-import csv
+# Check whether required packages are inststalled
+import subprocess
+import sys
+
+reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
+installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
+#print(installed_packages)
+
+packages = ['pyodbc','pandas', 'requests', 'regex']
+
+for package in packages:
+    try:
+        if package not in installed_packages:
+            print(package + ' is not installed.')
+            sys.exit()
+    except:
+        print('Error : Package does not exist. See Readme in Github for package installation')
+
+# Import relevant modules
+try:
+    import pyodbc
+    import os
+    #import pandas as pd
+    import requests
+    from datetime import datetime
+    import re
+    #import csv
+except:
+    print('Error in importing modules.')
 
 # Contact admin for UID and PWD
 UID = input("Enter your user id : ")
@@ -277,6 +299,7 @@ def add_Process(sample_name):
                     process_id = cursor.fetchone()[0]
                     add_SubProcess(process_id, subprocess_name=[])
                 case _ : return
+            
     except :
         print("Error in adding Process " + pro[0])
         raise
@@ -305,12 +328,13 @@ def default_values(code):
         
 # Function to add SubProcess. Input argument is process id (int), ex. 1029, and subprocess_id (varchar), ex. 'VCD1'
 def add_SubProcess(process_id, subprocess_name):
+    # Select from Subprocess list
+    sql = "SELECT Id, Name, Code from SubProcessTypes"
+    cursor.execute(sql)
+    x = cursor.fetchall()
+   
     # Assign subprocess name
     if len(subprocess_name) == 0 :
-        # Select from Subprocess list
-        sql = "SELECT Id, Name, Code from SubProcessTypes"
-        cursor.execute(sql)
-        x = cursor.fetchall()
         choice_list = []
         for idx,row in enumerate(x) : 
             print(idx,' .',row[1], ' - ', row[2])
@@ -342,8 +366,8 @@ def add_SubProcess(process_id, subprocess_name):
             (subprocess_par1, subprocess_par2, subprocess_par3) = default_values(x[choice][2])
         else :
             subprocess_name = input("Enter SubProcess name : ")
-            subprocessTypeId = input("Enter SubProcess Type Id : ")
-            subprocess_id = input("Enter SubProcess Code : ")
+            subprocessTypeId = x[-1][0]+1
+            subprocess_id = subprocess_name[:3]
             subprocess_desc = input("Enter SubProcess description : ")
             subprocess_com = input("Enter SubProcess comments : ")
             subprocess_name = input("Enter SubProcess Name : ")
@@ -352,45 +376,30 @@ def add_SubProcess(process_id, subprocess_name):
             subprocess_par3 = input("Enter SubProcess parameter1 (Leave blank if NA) : ")
     
     else:
-        # Enter new subprocess details
-        sql = "SELECT Id, Name, Code from SubProcessTypes"
-        cursor.execute(sql)
-        x = cursor.fetchall()
-        choice_list = []
+        code_list=[]
         for idx,row in enumerate(x) : 
-            print(idx, '. ',row[1], ' - ', row[2])
-            choice_list.append(idx)
-        # Print option for new process
-        print(str(idx+1) + '. New subProcess')
-        # Choose from the list of Sub processes
-        choice = int(input("Enter the subProcess index from list above: "))
-        # Assign subProcess details for the selected option
-        if choice in choice_list:
-            subprocess_name = subprocess_name
-            subprocessTypeId = x[choice][0]
-            subprocess_id = x[choice][2]
-            subprocess_desc = x[choice][1]
-            subprocess_com = ""
-            print(choice)
-            (subprocess_par1, subprocess_par2, subprocess_par3) = default_values(x[choice][2])
-        else :
-            subprocess_name = input("Enter SubProcess name : ")
-            subprocessTypeId = idx+1
-            subprocess_id = subprocess_name[:3]
-            subprocess_desc = input("Enter SubProcess description : ")
-            subprocess_com = input("Enter SubProcess comments : ")
-            subprocess_par1 = input("Enter SubProcess parameter1 (Leave blank if NA) : ")
-            subprocess_par2 = input("Enter SubProcess parameter1 (Leave blank if NA) : ")
-            subprocess_par3 = input("Enter SubProcess parameter1 (Leave blank if NA) : ")
+            code_list.append(row[2])
+        # Assign index of the subprocess passed as argument
+        try:
+            choice = code_list.index(subprocess_name[:3])
+            if subprocess_name[:3] in code_list:
+                subprocessTypeId = x[choice][0]
+                subprocess_id = x[choice][2]
+                subprocess_desc = x[choice][1]
+                subprocess_com = ""
+                (subprocess_par1, subprocess_par2, subprocess_par3) = default_values(x[choice][2])
+        except:
+            print('Error : Subprocess code does not exist')
+            raise
     subprocess_date = datetime.now()
-    
-    # Insert subprocess details in database
+
+      # Insert subprocess details in database
     val = (subprocess_name, subprocess_id, subprocessTypeId, subprocess_par1, subprocess_par2, subprocess_par3, subprocess_desc, \
         subprocess_date, login, login, process_id, subprocess_com)
     sql = "INSERT INTO SubProcesses (name, subprocessid, subprocessTypeId, parameterValue1, parameterValue2, parameterValue3, \
         description,createdOn,createdBy, uploadedby, ProcessId, comments) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
     cursor.execute(sql,val)
-
+    
     # Commit the changes made to the database
     conn.commit()
 
@@ -469,12 +478,17 @@ def check_file():
         if check_SubProcess(process_id, subprocess_name):
             upload_file(path, file)
         else:
+            # Add subprocess without prompt
+            add_SubProcess(process_id, subprocess_name)
+            upload_file(path, file)
+            '''
             choice = input("SubProcess does not exist for this sample. Do you want to add it ?  \n 1. Yes \n 2. No \n")
             match choice:
                 case "1":
                     add_SubProcess(process_id, subprocess_name)
                     upload_file(path, file)
                 case _: pass
+            '''
 
     # iterate through all file
     for file in os.listdir():
