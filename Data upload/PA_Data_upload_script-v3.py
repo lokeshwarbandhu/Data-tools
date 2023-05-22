@@ -332,7 +332,18 @@ def add_SubProcess(process_id, subprocess_name):
     sql = "SELECT Id, Name, Code from SubProcessTypes"
     cursor.execute(sql)
     x = cursor.fetchall()
-   
+    # determine code from subprocess name
+    def subpro_code(subprocess_name):     
+        sp = subprocess_name.split()
+        code = ''
+        if len(sp)==1:
+            subprocess_id = sp[0][:3]
+        else :
+            for i in range(0,len(sp)):
+                code = code + sp[i][0]
+            subprocess_id = code
+        return subprocess_id
+    
     # Assign subprocess name
     if len(subprocess_name) == 0 :
         choice_list = []
@@ -367,7 +378,7 @@ def add_SubProcess(process_id, subprocess_name):
         else :
             subprocess_name = input("Enter SubProcess name : ")
             subprocessTypeId = x[-1][0]+1
-            subprocess_id = subprocess_name[:3]
+            subprocess_id = subpro_code(subprocess_name)
             subprocess_desc = input("Enter SubProcess description : ")
             subprocess_com = input("Enter SubProcess comments : ")
             subprocess_name = input("Enter SubProcess Name : ")
@@ -381,10 +392,12 @@ def add_SubProcess(process_id, subprocess_name):
             code_list.append(row[2])
         # Assign index of the subprocess passed as argument
         try:
-            choice = code_list.index(subprocess_name[:3])
-            if subprocess_name[:3] in code_list:
+            match = re.match(r"([a-z]+)([0-9]+)", subprocess_name, re.I)
+            items = match.groups()
+            subprocess_id = items[0]
+            choice = code_list.index(subprocess_id)
+            if subprocess_id in code_list:
                 subprocessTypeId = x[choice][0]
-                subprocess_id = x[choice][2]
                 subprocess_desc = x[choice][1]
                 subprocess_com = ""
                 (subprocess_par1, subprocess_par2, subprocess_par3) = default_values(x[choice][2])
@@ -472,7 +485,7 @@ def check_file():
     # Function to check subprocess and call upload file
     def call_upload(sample_name, subprocess_name, path, file):
         # check whether subprocess exists for this sample
-        sql = "SELECT Processes.Id FROM Processes JOIN Samples ON Processes.SampleId = Samples.Id WHERE Samples.Name = \'" + sample_name + "\'"
+        sql = "SELECT Processes.Id FROM Processes JOIN Samples ON Processes.SampleId = Samples.Id WHERE Samples.Name = \'" + sample_name + "\'AND Processes.Name = \'" + process_name + "\'"
         cursor.execute(sql)
         process_id = cursor.fetchone()[0]
         if check_SubProcess(process_id, subprocess_name):
