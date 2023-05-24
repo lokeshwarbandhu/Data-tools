@@ -118,6 +118,7 @@ def check_SubProcess(process_id,subprocess_name):
 def add_Project():
     # Enter new project details
     project_id = input("Enter Project ID : ")
+    project_id = project_id.strip() # remove white spaces from project name
     # check whether Project ID already exists
     while check_Project(project_id):
         choice = input("Do you want to add samples to this project? \n 1. Yes \n 2. No \n 3. Exit \n")
@@ -157,6 +158,7 @@ def add_Project():
 # Function to add sample. Input arguments are Project_id, ex. PAT999, and sample_name, ex. "PET101"
 def add_Sample(project_id = "", sample_name = ""):
     # Assign project id
+    project_id = project_id.strip() # remove white spaces from project name
     sql = "SELECT ID FROM Projects WHERE Project_id = \'" +project_id+"\'"
     cursor.execute(sql)
     x = cursor.fetchone()
@@ -485,7 +487,7 @@ def check_file():
     # Function to check subprocess and call upload file
     def call_upload(sample_name, subprocess_name, path, file):
         # check whether subprocess exists for this sample
-        sql = "SELECT Processes.Id FROM Processes JOIN Samples ON Processes.SampleId = Samples.Id WHERE Samples.Name = \'" + sample_name + "\'AND Processes.Name = \'" + process_name + "\'"
+        sql = "SELECT Processes.Id FROM Processes JOIN Samples ON Processes.SampleId = Samples.Id WHERE Samples.Name = \'" + sample_name + "\' AND Processes.Name = \'" + process_name + "\'"
         cursor.execute(sql)
         process_id = cursor.fetchone()[0]
         if check_SubProcess(process_id, subprocess_name):
