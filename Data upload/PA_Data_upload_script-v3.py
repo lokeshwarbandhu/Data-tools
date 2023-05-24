@@ -335,14 +335,16 @@ def add_SubProcess(process_id, subprocess_name):
         # Assign subProcess details for the selected option
         if choice in choice_list:
             # Assign subprocess name based on choice from the list
-            sql = "SELECT MAX(Name) from Subprocesses WHERE ProcessId = \'" +str(process_id)+ "\'"
+            sql = "SELECT MAX(Subprocesses.Name) from Subprocesses \
+                JOIN SubProcessTypes ON SubProcessTypes.Id = Subprocesses.SubprocessTypeId \
+                WHERE ProcessId = \'" +str(process_id)+ "\' AND SubprocessTypeId = \'" +str(x[choice][0])+ "\'"
             cursor.execute(sql)
             data = cursor.fetchall()
             for row in data:
                 if row[0] == None:
                     subprocess_name = x[choice][2]+"1"
                 else:
-                    print(row[0])
+                    #print(row[0])
                     match = re.match(r"([a-z]+)([0-9]+)", row[0], re.I)
                     items = match.groups()
                     subprocess_name = items[0]+str(int(items[1])+1)
