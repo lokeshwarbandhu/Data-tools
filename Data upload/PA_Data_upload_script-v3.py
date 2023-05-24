@@ -28,30 +28,6 @@ try:
 except:
     print('Error in importing modules.')
 
-# Contact admin for UID and PWD
-UID = input("Enter your user id : ")
-PWD = input("Enter password : ")
-
-#######Connection will be done using this conection string#######
-connection_string = "DefaultEndpointsProtocol=https;AccountName=metasqlstorage;AccountKey=VoSW7No7d0pMH29Cp2cbQrV4J4AoaZyMPCG5Ml\
-zmF+c0e6SvGlkvrbvdbuFe02Ee4OHedcoau4KD+AStDgvEIA==;EndpointSuffix=core.windows.net"
-
-###### SQL connection part #
-conn = pyodbc.connect('Driver={SQL Server};'
-                       'Server=meta-sql-resources.database.windows.net;'
-                       'Database=metamaterial;'
-                       'UID='+UID+';'
-                       'PWD='+PWD+';'
-                       'Trusted_Connection=no;'
-                       'Encrypt=yes;')
-
-cursor = conn.cursor()
-print("Connected to the server \n")
-
-# Login Id used for data logging
-userid = input("Enter your login (name.surname) : ")
-login = userid + '@metamaterial.com'
-
 # Function to check whether Project exists or not. Input argument is project_id (varchar), ex. PAT999
 def check_Project(project_id):
     # check whether Project ID already exists
@@ -533,21 +509,52 @@ def check_file():
                     call_upload(sample_name, subprocess_name, path, file)
                 case _: pass
 
-choice  = input(" Choose from the list below : \n 1. Add Project \n 2. Add Sample \n 3. Add Process \n 4. Add SubProcess \n 5. Upload files to a SubProcess \n 6. Exit \n")
-match choice:
-    case "1": add_Project() # calls add_project first; add_sample, add_process, add_subprocess are called from there in appropriate order
-    case "2": 
-        # Enter new project details
-        project_id = input("Enter Project ID : ")
-        add_Sample(project_id=project_id,sample_name=[])
-    case "3":
-        project_id = input("Enter Project ID : ")
-        sample_name = input("Enter Sample Name : ")
-        add_Process(sample_name)
-    case "4":
-        project_id = input("Enter Project ID : ")
-        sample_name = input("Enter Sample Name : ")
-        add_Process(sample_name) # add_sub_process is called from add_Process in the correct order
-    case "5" : check_file()
-    case _ : pass
+choose = input("Do you want to access database? \n 1. Yes \n 2. No")
+# Connect to the server
+if choose == "1":
+    # Contact admin for UID and PWD
+    UID = input("Enter your user id : ")
+    PWD = input("Enter password : ")
+
+    #######Connection will be done using this conection string#######
+    connection_string = "DefaultEndpointsProtocol=https;AccountName=metasqlstorage;AccountKey=VoSW7No7d0pMH29Cp2cbQrV4J4AoaZyMPCG5Ml\
+    zmF+c0e6SvGlkvrbvdbuFe02Ee4OHedcoau4KD+AStDgvEIA==;EndpointSuffix=core.windows.net"
+
+    ###### SQL connection part #
+    conn = pyodbc.connect('Driver={SQL Server};'
+                        'Server=meta-sql-resources.database.windows.net;'
+                        'Database=metamaterial;'
+                        'UID='+UID+';'
+                        'PWD='+PWD+';'
+                        'Trusted_Connection=no;'
+                        'Encrypt=yes;')
+
+    cursor = conn.cursor()
+    print("Connected to the server \n")
+
+    # Login Id used for data logging
+    userid = input("Enter your login (name.surname) : ")
+    login = userid + '@metamaterial.com'
+    #########################################################
+
+while choose == "1":
+    choice  = input(" Choose from the list below : \n 1. Add Project \n 2. Add Sample \n 3. Add Process \n 4. Add SubProcess \n 5. Upload files to a SubProcess \n 6. Exit \n")
+    match choice:
+        case "1": add_Project() # calls add_project first; add_sample, add_process, add_subprocess are called from there in appropriate order
+        case "2": 
+            # Enter new project details
+            project_id = input("Enter Project ID : ")
+            add_Sample(project_id=project_id,sample_name=[])
+        case "3":
+            project_id = input("Enter Project ID : ")
+            sample_name = input("Enter Sample Name : ")
+            add_Process(sample_name)
+        case "4":
+            project_id = input("Enter Project ID : ")
+            sample_name = input("Enter Sample Name : ")
+            add_Process(sample_name) # add_sub_process is called from add_Process in the correct order
+        case "5" : check_file()
+        case _ : pass
+    choose = input("Do you want to access database? \n 1. Yes \n 2. No")
+
 conn.close()
