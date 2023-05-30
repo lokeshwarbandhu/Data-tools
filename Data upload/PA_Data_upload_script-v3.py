@@ -283,24 +283,24 @@ def add_Process(sample_name):
         raise
 
 def default_values(code):
-    match code:
-        case "SP":
-            subprocess_par1 = "Tencor 7"
-            subprocess_par2 = ""
-            subprocess_par3 = ""
-        case "FPP":
-            subprocess_par1 = "osilla probe station"
-            subprocess_par2 = "1.27"
-            subprocess_par3 = ""
-        case "VCD":
-            subprocess_par1 = "Dep2"
-            subprocess_par2 = "Cu001"
-            subprocess_par3 = "G001"
-        case _ :
-            subprocess_par1 = ""
-            subprocess_par2 = ""
-            subprocess_par3 = ""
-    
+    x = {"SEM":["NA", "NA","NA"],
+     "FIB":["NA", "NA","NA"],
+     "EDX":["NA", "NA","NA"],
+     "XRD":["NA", "NA","NA"],
+     "SP": ["Tencor 7","NA","NA"],
+     "FOI":["NA", "NA","NA"],
+     "ELL":["NA", "NA","NA"],
+     "TE":["NA", "NA","NA"],
+     "FPP":["osilla probe station", "1.27", "NA"],
+     "QCM":["NA", "NA","NA"],
+     "TI":["NA", "NA","NA"],
+     "VCD":["Dep2","Cu001","G001"],
+     "TM":["NA", "NA","NA"],
+     "SRC":["NA", "NA","NA"],
+     "THT":["NA", "NA","NA"],
+     "IVT":["NA", "NA","NA"],
+     "TRA":["NA", "NA","NA"]}
+    (subprocess_par1, subprocess_par2, subprocess_par3)=x[code.upper()]
     return (subprocess_par1, subprocess_par2, subprocess_par3)
 
         
@@ -381,6 +381,8 @@ def add_SubProcess(process_id, subprocess_name):
                 subprocess_desc = x[choice][1]
                 subprocess_com = ""
                 (subprocess_par1, subprocess_par2, subprocess_par3) = default_values(x[choice][2])
+            else :
+                print("Error in adding subprocess")
         except:
             print('Error : Subprocess code does not exist')
             raise
@@ -511,7 +513,7 @@ def check_file():
                     call_upload(sample_name, subprocess_name, path, file)
                 case _: pass
 
-choose = input("Do you want to access database? \n 1. Yes \n 2. No")
+choose = input("Do you want to access database? \n 1. Yes \n 2. No \n")
 # Connect to the server
 if choose == "1":
     # Contact admin for UID and PWD
@@ -557,6 +559,6 @@ while choose == "1":
             add_Process(sample_name) # add_sub_process is called from add_Process in the correct order
         case "5" : check_file()
         case _ : pass
-    choose = input("Do you want to access database? \n 1. Yes \n 2. No")
+    choose = input("Do you want to access database? \n 1. Yes \n 2. No \n")
 
 conn.close()
