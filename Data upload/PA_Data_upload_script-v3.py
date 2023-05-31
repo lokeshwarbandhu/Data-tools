@@ -105,31 +105,30 @@ def add_Project():
             case "2" : project_id = input("Enter new Project ID : ")
             case _ : return
             
-    else :   
-        project_name = input("Enter Project name : ")
-        project_desc = input("Enter Project description : ")
-        project_com = input("Enter Project comments : ")
-        project_date = datetime.now()
+    project_name = input("Enter Project name : ")
+    project_desc = input("Enter Project description : ")
+    project_com = input("Enter Project comments : ")
+    project_date = datetime.now()
 
-        # Insert project details in database
-        val = (project_id, project_name, project_desc, project_com, project_date, login)
-        sql = "INSERT INTO Projects (project_id, name, description, comments, createdOn, createdBy) VALUES (?,?,?,?,?,?)"
-        cursor.execute(sql,val)
-        
-        # Commit the changes made to the database
-        conn.commit()
+    # Insert project details in database
+    val = (project_id, project_name, project_desc, project_com, project_date, login)
+    sql = "INSERT INTO Projects (project_id, name, description, comments, createdOn, createdBy) VALUES (?,?,?,?,?,?)"
+    cursor.execute(sql,val)
+    
+    # Commit the changes made to the database
+    conn.commit()
 
-        # Fetch the last project uploaded
-        try:
-            print("Checking whether Project is added to the database now:")
-            if check_Project(project_id) :
-                choice = input("Do you want to add samples to this project?  \n 1. Yes \n 2. No \n")
-                match choice:
-                    case "1": add_Sample(project_id=project_id, sample_name=[])
-                    case _ : pass
-        except:
-            print("Error in adding project" + project_id)
-            raise
+    # Fetch the last project uploaded
+    try:
+        print("Checking whether Project is added to the database now:")
+        if check_Project(project_id) :
+            choice = input("Do you want to add samples to this project?  \n 1. Yes \n 2. No \n")
+            match choice:
+                case "1": add_Sample(project_id=project_id, sample_name=[])
+                case _ : pass
+    except:
+        print("Error in adding project" + project_id)
+        raise
 
 # Function to add sample. Input arguments are Project_id, ex. PAT999, and sample_name, ex. "PET101"
 def add_Sample(project_id = "", sample_name = ""):
@@ -426,8 +425,7 @@ def upload_file(path,file):
     for row in x: 
         id = row[0]
         attachment = row[1]
-        #print(id)
-    
+            
     if attachment == None :
         # upload data using api
         
@@ -467,7 +465,9 @@ def check_file():
     # Function to check subprocess and call upload file
     def call_upload(sample_name, subprocess_name, path, file):
         # check whether subprocess exists for this sample
-        sql = "SELECT Processes.Id FROM Processes JOIN Samples ON Processes.SampleId = Samples.Id WHERE Samples.Name = \'" + sample_name + "\' AND Processes.Name = \'" + process_name + "\'"
+        sql = "SELECT Processes.Id FROM Processes \
+            JOIN Samples ON Processes.SampleId = Samples.Id \
+            WHERE Samples.Name = \'" + sample_name + "\' AND Processes.Name = \'" + process_name + "\'"
         cursor.execute(sql)
         process_id = cursor.fetchone()[0]
         if check_SubProcess(process_id, subprocess_name):
