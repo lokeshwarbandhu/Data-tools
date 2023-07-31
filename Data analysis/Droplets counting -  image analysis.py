@@ -2,7 +2,7 @@ import cv2
 import pylab
 from scipy import ndimage
 
-im = cv2.imread('"C:\\Users\\Meta Materials\\Desktop\\Picture1.png"')
+im = cv2.imread("C:\\Users\\Meta Materials\\Pictures\\droplets\\500um.jpg")
 pylab.figure(0)
 pylab.imshow(im)
 
