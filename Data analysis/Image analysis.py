@@ -3,8 +3,9 @@ import numpy as np
 import pylab
 import matplotlib.pyplot as plt
 import pandas as pd
+
 # Kmeans 
-def kmeans_color_quantization(image, clusters=8, rounds=1):
+def kmeans_color_quantization(image, clusters=2, rounds=1000):
     h, w = image.shape[:2]
     samples = np.zeros([h*w,3], dtype=np.float32)
     count = 0
@@ -17,7 +18,7 @@ def kmeans_color_quantization(image, clusters=8, rounds=1):
     compactness, labels, centers = cv2.kmeans(samples,
             clusters, 
             None,
-            (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10000, 0.0001), 
+            (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 0.1), 
             rounds, 
             cv2.KMEANS_RANDOM_CENTERS)
 
@@ -26,7 +27,7 @@ def kmeans_color_quantization(image, clusters=8, rounds=1):
     return res.reshape((image.shape))
 
 # Load image
-image = cv2.imread("C:\\Users\\Meta Materials\\Pictures\\droplets\\500um.jpg")
+image = cv2.imread("C:\\Users\\LokeshwarBandhu\\Pictures\\PEN067\\PEN067-OI008-BF.jpg")
 original = image.copy()
 
 # Perform kmeans color segmentation, grayscale, Otsu's threshold
@@ -67,7 +68,7 @@ cv2.imshow('kmeans', kmeans)
 cv2.imshow('original', original)
 cv2.imshow('thresh', thresh)
 cv2.imshow('result', result)
-cv2.waitKey()
+#cv2.waitKey()
 
 
 # Plot particle size distribution (histograms)
