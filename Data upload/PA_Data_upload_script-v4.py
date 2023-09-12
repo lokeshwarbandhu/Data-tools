@@ -286,7 +286,7 @@ def default_values(code):
      "FIB":["NA", "NA","NA"],
      "EDX":["NA", "NA","NA"],
      "XRD":["NA", "NA","NA"],
-     "SP": ["Tencor 7","NA","NA"],
+     "SP": ["NA","NA","NA"],
      "FOI":["NA", "NA","NA"],
      "ELL":["NA", "NA","NA"],
      "TE":["NA", "NA","NA"],
@@ -298,7 +298,9 @@ def default_values(code):
      "SRC":["NA", "NA","NA"],
      "THT":["NA", "NA","NA"],
      "IVT":["NA", "NA","NA"],
-     "TRA":["NA", "NA","NA"]}
+     "TRA":["NA", "NA","NA"],
+     "OI":["NA", "NA","NA"],
+     "OIA":["NA", "NA","NA"]}
     (subprocess_par1, subprocess_par2, subprocess_par3)=x[code.upper()]
     return (subprocess_par1, subprocess_par2, subprocess_par3)
 
@@ -407,6 +409,69 @@ def add_SubProcess(process_id, subprocess_name):
         print("Error in adding SubProcess" + subprocess_name)
         raise
 
+# Function to do particle count on microscope images
+def image_analysis(file):
+    import cv2
+    import numpy as np
+    #import pylab
+    #import matplotlib.pyplot as plt
+    import pandas as pd
+    #import requests
+    #from io import BytesIO
+
+    # Kmeans 
+    def kmeans_color_quantization(image, clusters=2, rounds=1000):
+        h, w = image.shape[:2]
+        samples = np.zeros([h*w,3], dtype=np.float32)
+        count = 0
+
+        for x in range(h):
+            for y in range(w):
+                samples[count] = image[x][y]
+                count += 1
+
+        compactness, labels, centers = cv2.kmeans(samples,
+                clusters, 
+                None,
+                (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 0.1), 
+                rounds, 
+                cv2.KMEANS_RANDOM_CENTERS)
+
+        centers = np.uint8(centers)
+        res = centers[labels.flatten()]
+        return res.reshape((image.shape))
+
+    # Load image
+    image = cv2.imread(file)
+    #cv2.imshow('a',img)
+    #cv2.waitKey(0)
+    #original = image.copy()
+
+    # Perform kmeans color segmentation, grayscale, Otsu's threshold
+    kmeans = kmeans_color_quantization(image, clusters=2)
+    gray = cv2.cvtColor(kmeans, cv2.COLOR_BGR2GRAY)
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+
+    # Find contours, remove tiny specs using contour area filtering, gather points
+    comet_data = []
+    cnts, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
+    AREA_THRESHOLD = 2
+    for c in cnts:
+        area = cv2.contourArea(c)
+        if area < AREA_THRESHOLD:
+            cv2.drawContours(thresh, [c], -1, 0, -1)
+        else:
+            (x, y), radius = cv2.minEnclosingCircle(c)
+            comet_data.append([int(x), int(y), radius, area])
+
+    df=pd.DataFrame(comet_data, columns=['Location X', 'Location Y', 'radius (pixels)', 'area (contour)'])
+    #print("Number of particles: {}".format(len(df)))
+    #print("Average particle size: {:.3f}".format(df['area (contour)'].mean()))
+
+    filetxt = file.replace('OI','OIA').replace('jpg','csv')
+    df.to_csv(filetxt, header=True, index=None)
+
+
 # Function to upload file using Web API
 def upload_file(path,file):
     sample_name = re.split('_|-', file)[0]
@@ -428,12 +493,11 @@ def upload_file(path,file):
             
     if attachment == None :
         # upload data using api
-        
         url = "https://metamaterial.azurewebsites.net/api/Subprocess/Upload/"+str(id)+'/'+login
         #print(url)
         payload={}
         #files=[('files',(filename,open(filepath,'rt'),filetype))]
-        files=[('files',(file,open(filepath,'rb'),filetype))]
+        files=[('files',(file,open(filepath,'rt'),filetype))]
         #files={'files':(file,open(filepath,'rt'),filetype)}
         headers = {'Authorization': 'Basic bWV0YW1hdGVyaWFsOnd4Ukt3eVpMWTBVa1ZBRWI='}
         response = requests.request("POST", url, headers=headers, data=payload, files=files)
@@ -457,10 +521,12 @@ def check_file():
         raise
     
     # Determine the type of deposition to minimise computational time
-    process = input("Enter the type of Process? \n 1. Deposition \n 2. Characterisation \n")
+    process = input("Enter the type of Process? \n 1. Deposition \n 2. Characterisation \n 3. Quality control \n 4. New process \n")
     match process:
         case "1" : process_name = "Deposition"
         case "2" : process_name = "Characterisation"
+        case "3" : process_name = "Quality control"
+        case "4" : process_name = input("Enter new process : ")
     
     # Function to check subprocess and call upload file
     def call_upload(sample_name, subprocess_name, path, file):
@@ -470,20 +536,19 @@ def check_file():
             WHERE Samples.Name = \'" + sample_name + "\' AND Processes.Name = \'" + process_name + "\'"
         cursor.execute(sql)
         process_id = cursor.fetchone()[0]
-        if check_SubProcess(process_id, subprocess_name):
-            upload_file(path, file)
-        else:
-            # Add subprocess without prompt
+        if not check_SubProcess(process_id, subprocess_name) :
             add_SubProcess(process_id, subprocess_name)
+        else:
             upload_file(path, file)
-            '''
-            choice = input("SubProcess does not exist for this sample. Do you want to add it ?  \n 1. Yes \n 2. No \n")
-            match choice:
-                case "1":
-                    add_SubProcess(process_id, subprocess_name)
-                    upload_file(path, file)
-                case _: pass
-            '''
+            match = re.match(r"([a-z]+)([0-9]+)", subprocess_name, re.I)
+            items = match.groups()
+            if items[0] == "OI" :
+                image_analysis(file) # call image analysis
+                filetxt = file.replace('OI','OIA').replace('jpg','csv')
+                if not check_SubProcess(process_id, filetxt.split('.')[0].split('-')[1]) : 
+                    add_SubProcess(process_id, filetxt.split('.')[0].split('-')[1])
+                upload_file(path, filetxt) # upload image analysis file
+                print("Image analysis file uploaded")
 
     # iterate through all file
     for file in os.listdir():
@@ -513,7 +578,7 @@ def check_file():
                     call_upload(sample_name, subprocess_name, path, file)
                 case _: pass
 
-choose = input("Do you want to access database? \n 1. Yes \n 2. No \n")
+choose = "1"
 # Connect to the server
 if choose == "1":
     # Contact admin for UID and PWD
