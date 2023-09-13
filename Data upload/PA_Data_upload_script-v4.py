@@ -299,7 +299,7 @@ def default_values(code):
      "THT":["NA", "NA","NA"],
      "IVT":["NA", "NA","NA"],
      "TRA":["NA", "NA","NA"],
-     "OI":["NA", "NA","NA"],
+     "OI":["1194x1194", "2050x2050","NA"],
      "OIA":["NA", "NA","NA"]}
     (subprocess_par1, subprocess_par2, subprocess_par3)=x[code.upper()]
     return (subprocess_par1, subprocess_par2, subprocess_par3)
@@ -410,7 +410,7 @@ def add_SubProcess(process_id, subprocess_name):
         raise
 
 # Function to do particle count on microscope images
-def image_analysis(file):
+def image_analysis(file,factor):
     import cv2
     import numpy as np
     #import pylab
@@ -462,9 +462,9 @@ def image_analysis(file):
             cv2.drawContours(thresh, [c], -1, 0, -1)
         else:
             (x, y), radius = cv2.minEnclosingCircle(c)
-            comet_data.append([int(x), int(y), radius, area])
+            comet_data.append([int(x), int(y), radius * factor, area * factor * factor])
 
-    df=pd.DataFrame(comet_data, columns=['Location X', 'Location Y', 'radius (pixels)', 'area (contour)'])
+    df=pd.DataFrame(comet_data, columns=['Location X', 'Location Y', 'radius (um)', 'area (contour)'])
     #print("Number of particles: {}".format(len(df)))
     #print("Average particle size: {:.3f}".format(df['area (contour)'].mean()))
 
@@ -497,7 +497,11 @@ def upload_file(path,file):
         #print(url)
         payload={}
         #files=[('files',(filename,open(filepath,'rt'),filetype))]
-        files=[('files',(file,open(filepath,'rt'),filetype))]
+        #files=[('files',(file,open(filepath,'rb'),filetype))]
+        if subprocess_name[:3] == "OIA" :
+            files=[('files',(file,open(filepath,'rt'),filetype))]
+        else:
+            files=[('files',(file,open(filepath,'rb'),filetype))]
         #files={'files':(file,open(filepath,'rt'),filetype)}
         headers = {'Authorization': 'Basic bWV0YW1hdGVyaWFsOnd4Ukt3eVpMWTBVa1ZBRWI='}
         response = requests.request("POST", url, headers=headers, data=payload, files=files)
@@ -538,17 +542,32 @@ def check_file():
         process_id = cursor.fetchone()[0]
         if not check_SubProcess(process_id, subprocess_name) :
             add_SubProcess(process_id, subprocess_name)
-        else:
-            upload_file(path, file)
-            match = re.match(r"([a-z]+)([0-9]+)", subprocess_name, re.I)
-            items = match.groups()
-            if items[0] == "OI" :
-                image_analysis(file) # call image analysis
-                filetxt = file.replace('OI','OIA').replace('jpg','csv')
+        
+        upload_file(path, file)
+        match = re.match(r"([a-z]+)([0-9]+)", subprocess_name, re.I)
+        items = match.groups()
+        if items[0] == "OI" :
+            # calculate pixel to um conversion factor
+            sql = "SELECT ParameterValue1, ParameterValue2 from Subprocesses \
+                    INNER JOIN Processes ON Processes.ID =  Subprocesses.ProcessID \
+                    WHERE SubProcesstypeID = 24 AND Processes.ID = \'" + str(process_id) + "\' AND Subprocesses.Name = \'" + subprocess_name + "\'" 
+            cursor.execute(sql)
+            data = cursor.fetchall()
+            print(data)
+            pixel = int(data[0][0].split('x')[0])
+            size = int(data[0][1].split('x')[0])
+            factor = size/pixel
+
+            # call image analysis
+            image_analysis(file, factor) 
+            filetxt = file.replace('OI','OIA').replace('jpg','csv')
+            try:
                 if not check_SubProcess(process_id, filetxt.split('.')[0].split('-')[1]) : 
                     add_SubProcess(process_id, filetxt.split('.')[0].split('-')[1])
                 upload_file(path, filetxt) # upload image analysis file
                 print("Image analysis file uploaded")
+            except:
+                print("Error in uploading image analysis file")
 
     # iterate through all file
     for file in os.listdir():
